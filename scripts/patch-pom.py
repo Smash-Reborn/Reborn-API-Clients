@@ -70,6 +70,44 @@ def patch_pom(pom_path, name, description, is_legacy=False):
     if build is not None:
         plugins = build.find('maven:plugins', ns)
         if plugins is not None:
+            # Update maven-compiler-plugin for Java 11 (non-legacy only)
+            if not is_legacy:
+                for plugin in plugins.findall('maven:plugin', ns):
+                    artifact_id = plugin.find('maven:artifactId', ns)
+                    if artifact_id is not None and artifact_id.text == 'maven-compiler-plugin':
+                        configuration = plugin.find('maven:configuration', ns)
+                        if configuration is not None:
+                            # Update source and target to 11
+                            source = configuration.find('maven:source', ns)
+                            target = configuration.find('maven:target', ns)
+                            if source is not None:
+                                source.text = '11'
+                            if target is not None:
+                                target.text = '11'
+                        break
+
+            # Ensure maven-javadoc-plugin is present with proper configuration
+            javadoc_exists = False
+            for plugin in plugins.findall('maven:plugin', ns):
+                artifact_id = plugin.find('maven:artifactId', ns)
+                if artifact_id is not None and artifact_id.text == 'maven-javadoc-plugin':
+                    javadoc_exists = True
+                    break
+
+            if not javadoc_exists:
+                javadoc_plugin = ET.Element('plugin')
+                ET.SubElement(javadoc_plugin, 'groupId').text = 'org.apache.maven.plugins'
+                ET.SubElement(javadoc_plugin, 'artifactId').text = 'maven-javadoc-plugin'
+                ET.SubElement(javadoc_plugin, 'version').text = '3.5.0'
+
+                executions = ET.SubElement(javadoc_plugin, 'executions')
+                execution = ET.SubElement(executions, 'execution')
+                ET.SubElement(execution, 'id').text = 'attach-javadocs'
+                goals = ET.SubElement(execution, 'goals')
+                ET.SubElement(goals, 'goal').text = 'jar'
+
+                plugins.append(javadoc_plugin)
+
             # Add GPG plugin
             gpg_plugin = ET.Element('plugin')
             ET.SubElement(gpg_plugin, 'groupId').text = 'org.apache.maven.plugins'

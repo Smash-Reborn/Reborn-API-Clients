@@ -1,0 +1,65 @@
+name: Publish TypeScript Client
+
+on:
+  push:
+    paths:
+      - 'typescript-client/**'
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download OpenAPI Spec
+        run: |
+          curl -o openapi.yml https://api.smsh.sh/docs/openapi
+          echo "Downloaded OpenAPI spec from production API"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install OpenAPI Generator CLI
+        run: npm install -g @openapitools/openapi-generator-cli
+
+      - name: Extract API Version
+        id: version
+        run: |
+          API_VERSION=$(grep -oP 'version:\s*\K[^#\n]*' openapi.yml | tr -d ' "'"'")
+          echo "version=$API_VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted API version: $API_VERSION"
+
+      - name: Generate TypeScript Client
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          openapi-generator-cli generate \
+            -i openapi.yml \
+            -g typescript-axios \
+            -o typescript-client \
+            --additional-properties=npmName=@smash-reborn/reborn-api-client,npmVersion=$VERSION,supportsES6=true
+
+      - name: Install dependencies
+        working-directory: ./typescript-client
+        run: npm install
+
+      - name: Build TypeScript client
+        working-directory: ./typescript-client
+        run: npm run build
+
+      - name: Publish to NPM
+        working-directory: ./typescript-client
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public

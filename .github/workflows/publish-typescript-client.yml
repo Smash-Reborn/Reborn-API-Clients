@@ -54,6 +54,12 @@ jobs:
             -o typescript-client \
             --additional-properties=npmName=@rebornteam/reborn-api,npmVersion=$VERSION,supportsES6=true,gitUserId=Smash-Reborn,gitRepoId=Reborn-API-Clients
 
+      - name: Fix package.json
+        working-directory: ./typescript-client
+        run: |
+          npm pkg set repository.url="git+https://github.com/Smash-Reborn/Reborn-API-Clients.git"
+          npm pkg fix
+
       - name: Install dependencies
         working-directory: ./typescript-client
         run: npm install

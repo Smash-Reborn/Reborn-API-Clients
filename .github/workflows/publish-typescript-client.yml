@@ -29,7 +29,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Install OpenAPI Generator CLI
         run: npm install -g @openapitools/openapi-generator-cli
@@ -49,7 +48,7 @@ jobs:
             -i openapi.yml \
             -g typescript-axios \
             -o typescript-client \
-            --additional-properties=npmName=@rebornteam/reborn-api,npmVersion=$VERSION,supportsES6=true
+            --additional-properties=npmName=@rebornteam/reborn-api,npmVersion=$VERSION,supportsES6=true,gitUserId=Smash-Reborn,gitRepoId=Reborn-API-Clients
 
       - name: Install dependencies
         working-directory: ./typescript-client

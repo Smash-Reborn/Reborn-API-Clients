@@ -34,6 +34,9 @@ jobs:
       - name: Upgrade npm
         run: npm install -g npm@latest
 
+      - name: Remove deprecated npm config
+        run: npm config delete always-auth
+
       - name: Install OpenAPI Generator CLI
         run: npm install -g @openapitools/openapi-generator-cli
 

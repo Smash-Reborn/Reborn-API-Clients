@@ -7,6 +7,11 @@ on:
     branches:
       - master
   workflow_dispatch:
+    inputs:
+      spec_url:
+        description: 'URL to download OpenAPI spec from (leave blank to use production API)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -22,8 +27,14 @@ jobs:
 
       - name: Download OpenAPI Spec
         run: |
-          curl -o openapi.yml https://api.smsh.sh/docs/openapi
-          echo "Downloaded OpenAPI spec from production API"
+          SPEC_URL="${{ inputs.spec_url }}"
+          if [ -z "$SPEC_URL" ]; then
+            SPEC_URL="https://api.smsh.sh/docs/openapi"
+            echo "No spec_url provided, downloading from production API"
+          else
+            echo "Downloading spec from custom URL"
+          fi
+          curl -fL -o openapi.yml "$SPEC_URL"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
